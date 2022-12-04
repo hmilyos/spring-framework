@@ -74,19 +74,22 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	private static final int SUPPRESSED_EXCEPTIONS_LIMIT = 100;
 
 
-	/** Cache of singleton objects: bean name to bean instance. */
+	/** 我们常说的单例池，大部分单例 bean 都在这里，一级缓存，避免重复创建 bean Cache of singleton objects: bean name to bean instance. */
 	private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 
-	/** Cache of singleton factories: bean name to ObjectFactory. */
+	/**  三级缓存：存的是对象工厂，为了方便拓展（比如 AOP，利用 BeanPostProcessor 后置处理器），
+	 * 因为在循环依赖的时候可能注入的是一个特殊对象，比如代理对象，不能是半成品对象
+	 *  Cache of singleton factories: bean name to ObjectFactory. */
 	private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
 
-	/** Cache of early singleton objects: bean name to bean instance. */
+	/**  二级缓存：为了多级循环依赖的时候不重复创建对象，提高效率，存放的是半成品，过渡期使用的
+	 *  Cache of early singleton objects: bean name to bean instance. */
 	private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(16);
 
-	/** Set of registered singletons, containing the bean names in registration order. */
+	/** 已经被 Spring 给初始化好的 beanName 集合 Set of registered singletons, containing the bean names in registration order. */
 	private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
-	/** Names of beans that are currently in creation. */
+	/** 所有正在被创建的 Bean 的 Name 集合 Names of beans that are currently in creation. */
 	private final Set<String> singletonsCurrentlyInCreation =
 			Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
@@ -155,6 +158,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		Assert.notNull(singletonFactory, "Singleton factory must not be null");
 		synchronized (this.singletonObjects) {
 			if (!this.singletonObjects.containsKey(beanName)) {
+				//单例池中不存在这个 bean
 				this.singletonFactories.put(beanName, singletonFactory);
 				this.earlySingletonObjects.remove(beanName);
 				this.registeredSingletons.add(beanName);
@@ -179,8 +183,11 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	@Nullable
 	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 		// Quick check for existing instance without full singleton lock
+//		从单例池获取
 		Object singletonObject = this.singletonObjects.get(beanName);
+//		isSingletonCurrentlyInCreation 判断这个 bean 是否正在被创建，即判断 所有正在被创建的 Bean 的 Name 集合 中是否有当前 beanName
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+//			当前 bean 还没创建好，正在被创建
 			singletonObject = this.earlySingletonObjects.get(beanName);
 			if (singletonObject == null && allowEarlyReference) {
 				synchronized (this.singletonObjects) {
@@ -189,10 +196,19 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					if (singletonObject == null) {
 						singletonObject = this.earlySingletonObjects.get(beanName);
 						if (singletonObject == null) {
+//						三级缓存中获取
 							ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 							if (singletonFactory != null) {
+//								获取半成品的 bean。 为什么不直接缓存 半成品的 bean，而是缓存一个工厂？
+//									为了方便拓展，因为在循环依赖的时候可能注入的是一个特殊对象，不能是半成品对象
+//									比如我要注入的是一个代理对象，这时候它还是个半成品，需要把代理提前执行
+//								getObject 底层是比较复杂的，拓展点很多
 								singletonObject = singletonFactory.getObject();
+//								把半成品的 bean 放到二级缓存。
+//								直接返回这个半成品的 bean 不就行了，为什么还要放到二级缓存？
+//									为了不重复执行上面的 getObject 方法重复创建对象，getObject 方法比较复杂，耗性能，提高效率
 								this.earlySingletonObjects.put(beanName, singletonObject);
+//								从三级缓存删除这个 bean 工厂
 								this.singletonFactories.remove(beanName);
 							}
 						}
@@ -224,6 +240,8 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				if (logger.isDebugEnabled()) {
 					logger.debug("Creating shared instance of singleton bean '" + beanName + "'");
 				}
+//				创建 bean 之前的处理，先判断 bean 是不是在被排除的集合中（ Spring 可以配置扫描时排除某些包或者 class），
+//				再判断 bean 是否在创建过程当中，不在就标记成正在被创建
 				beforeSingletonCreation(beanName);
 				boolean newSingleton = false;
 				boolean recordSuppressedExceptions = (this.suppressedExceptions == null);
