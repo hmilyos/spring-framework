@@ -187,16 +187,17 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		Object singletonObject = this.singletonObjects.get(beanName);
 //		isSingletonCurrentlyInCreation 判断这个 bean 是否正在被创建，即判断 所有正在被创建的 Bean 的 Name 集合 中是否有当前 beanName
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
-//			当前 bean 还没创建好，正在被创建
+//			当前 bean 还没创建好，正在被创建, 从二级缓存中获取
 			singletonObject = this.earlySingletonObjects.get(beanName);
 			if (singletonObject == null && allowEarlyReference) {
 				synchronized (this.singletonObjects) {
-					// Consistent creation of early reference within full singleton lock
+					// 加锁同步保证线程安全，再次从单例池获取 bean，看看 bean 有没有已经被创建 Consistent creation of early reference within full singleton lock
 					singletonObject = this.singletonObjects.get(beanName);
 					if (singletonObject == null) {
+//						还是没被创建，再次从二级缓存获取
 						singletonObject = this.earlySingletonObjects.get(beanName);
 						if (singletonObject == null) {
-//						三级缓存中获取
+//						二级缓存中也没有，那就从三级缓存中获取
 							ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 							if (singletonFactory != null) {
 //								获取半成品的 bean。 为什么不直接缓存 半成品的 bean，而是缓存一个工厂？
