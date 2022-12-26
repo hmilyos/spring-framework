@@ -873,6 +873,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		// 触发初始化生成 所有的 非懒加载的 单例 bean  Trigger initialization of all non-lazy singleton beans...
 		for (String beanName : beanNames) {
+//			为什么要遍历 List 获取到 beanName，再从 Map 获取 bd，干嘛不直接遍历 Map？我猜是因为 List 是有序的，Map 无序
 //			BeanDefinition 在 mergedBeanDefinitionMap 或者 beanDefinitionMap 中
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {

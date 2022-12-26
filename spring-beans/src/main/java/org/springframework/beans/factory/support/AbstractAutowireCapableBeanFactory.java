@@ -501,7 +501,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		try {
-			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
+			// AOP 相关的 Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
 				return bean;
@@ -567,6 +567,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		synchronized (mbd.postProcessingLock) {
 			if (!mbd.postProcessed) {
 				try {
+//				遍历所有的 BeanPostProcessor，执行所有实现了 MergedBeanDefinitionPostProcessor 的 bp 的 postProcessMergedBeanDefinition 方法，
+//				例如 AutowiredAnnotationBeanPostProcessor 的这个方法就是 查找当前 beanName 当中所有加了 @Autowired 的属性和方法，然后缓存起来
+//				CommonAnnotationBeanPostProcessor 就是找 @Resource 的属性和方法
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
 				}
 				catch (Throwable ex) {
@@ -583,7 +586,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
 				isSingletonCurrentlyInCreation(beanName));
 		if (earlySingletonExposure) {
-//			支持循环依赖
+//			支持循环依赖，暴露 BeanFactory
 			if (logger.isTraceEnabled()) {
 				logger.trace("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
@@ -595,7 +598,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Initialize the bean instance.
 		Object exposedObject = bean;
 		try {
+//			填充属性
 			populateBean(beanName, mbd, instanceWrapper);
+//			执行各种 Aware 的回调、初始化回调、执行直接实现了 BPP 的对象的 after 方法
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		}
 		catch (Throwable ex) {
@@ -1104,8 +1109,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected void applyMergedBeanDefinitionPostProcessors(RootBeanDefinition mbd, Class<?> beanType, String beanName) {
 		for (BeanPostProcessor bp : getBeanPostProcessors()) {
+//			遍历所有的 bp
 			if (bp instanceof MergedBeanDefinitionPostProcessor) {
 				MergedBeanDefinitionPostProcessor bdp = (MergedBeanDefinitionPostProcessor) bp;
+//				执行所有实现了 MergedBeanDefinitionPostProcessor 的 bp 的 postProcessMergedBeanDefinition 方法，
+//				例如 AutowiredAnnotationBeanPostProcessor 的这个方法就是 查找当前 beanName 当中所有加了 @Autowired 的属性和方法，然后缓存起来
+//				CommonAnnotationBeanPostProcessor 就是找 @Resource 的
 				bdp.postProcessMergedBeanDefinition(mbd, beanType, beanName);
 			}
 		}
@@ -1185,10 +1194,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		Supplier<?> instanceSupplier = mbd.getInstanceSupplier();
 		if (instanceSupplier != null) {
+//			有 Supplier 就用 Supplier 创建
 			return obtainFromSupplier(instanceSupplier, beanName);
 		}
 
 		if (mbd.getFactoryMethodName() != null) {
+//			有工厂方法用工厂方法创建
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
 
@@ -1222,6 +1233,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Preferred constructors for default construction?
 		ctors = mbd.getPreferredConstructors();
 		if (ctors != null) {
+//			有构造方法用构造方法
 			return autowireConstructor(beanName, mbd, ctors, null);
 		}
 
@@ -1440,12 +1452,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
-//					完成 @Autowired 属性注入
 					PropertyValues pvsToUse = ibp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
 					if (pvsToUse == null) {
 						if (filteredPds == null) {
 							filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
 						}
+//					完成 @Autowired 属性注入
 						pvsToUse = ibp.postProcessPropertyValues(pvs, filteredPds, bw.getWrappedInstance(), beanName);
 						if (pvsToUse == null) {
 							return;
@@ -1463,7 +1475,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		if (pvs != null) {
-//			完成自动注入
+//			找到所有 set 方法，然后完成自动注入
 			applyPropertyValues(beanName, mbd, bw, pvs);
 		}
 	}
@@ -1809,10 +1821,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		Object wrappedBean = bean;
 		if (mbd == null || !mbd.isSynthetic()) {
+//			执行注解方式的 初始化方法回调
 			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
 		}
 
 		try {
+//			执行 接口/xml 方式的初始化方法回调
 			invokeInitMethods(beanName, wrappedBean, mbd);
 		}
 		catch (Throwable ex) {
@@ -1821,6 +1835,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					beanName, "Invocation of init method failed", ex);
 		}
 		if (mbd == null || !mbd.isSynthetic()) {
+//			执行直接实现了 BPP 的对象的 after 方法,例如在这里拓展完成代理
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}
 
@@ -1858,8 +1873,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected void invokeInitMethods(String beanName, Object bean, @Nullable RootBeanDefinition mbd)
 			throws Throwable {
-//			执行各种初始化方法的回调
-		boolean isInitializingBean = (bean instanceof InitializingBean);
+//			执行各种接口/xml方式的 初始化方法的回调
+		boolean isInitializingBean = (bean instanceof InitializingBean);// 接口方式
 		if (isInitializingBean && (mbd == null || !mbd.isExternallyManagedInitMethod("afterPropertiesSet"))) {
 			if (logger.isTraceEnabled()) {
 				logger.trace("Invoking afterPropertiesSet() on bean with name '" + beanName + "'");
