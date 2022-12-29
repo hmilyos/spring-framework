@@ -234,6 +234,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 		this.registriesPostProcessed.add(registryId);
 
+		// 在这个方法里面执行完扫描
 		processConfigBeanDefinitions(registry);
 	}
 
@@ -266,20 +267,25 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
 		String[] candidateNames = registry.getBeanDefinitionNames();
-
+//		拿到内置类 和 我们项目提供的 配置类(Spring 里面一切扫描出来的bd皆配置类(1.Spring内置那些bd不算,2.执行内置的BeanDefinitionRegistryPostProcessor之后的bd不算))
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
+//			判断类是否被解析了
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
+//			判断是全配置类 和 半配置类，全配置、半配置并有关官方说法，只是方便我理解和区分，所以这么喊
+//			全配置就是加了 @Configuration 的类，没有加 @Configuration 就是半配置
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
+//				我们配了扫描进来的，基本上会进到这里来，spring 内置的类不会进这里，
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
 		}
 
 		// Return immediately if no @Configuration classes were found
+//		configCandidates 这里拿到的基本就是我们配置扫描进来的，没有 spring 内置的类
 		if (configCandidates.isEmpty()) {
 			return;
 		}
@@ -291,7 +297,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			return Integer.compare(i1, i2);
 		});
 
-		// Detect any custom bean name generation strategy supplied through the enclosing application context
+		// 判断选择用哪个 beanName 生成策略 Detect any custom bean name generation strategy supplied through the enclosing application context
 		SingletonBeanRegistry sbr = null;
 		if (registry instanceof SingletonBeanRegistry) {
 			sbr = (SingletonBeanRegistry) registry;
@@ -306,9 +312,11 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 
 		if (this.environment == null) {
+//			实例化读取环境变量的对象
 			this.environment = new StandardEnvironment();
 		}
 
+		// 配置类的解析器，componentScanBeanNameGenerator 就是 BeanName 的生成策略，通过构造方法传进去
 		// Parse each @Configuration class
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
@@ -317,6 +325,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
+//			解析配置类，这里面就是在遍历我们项目中提供的配置类
 			parser.parse(candidates);
 			parser.validate();
 

@@ -58,19 +58,22 @@ public abstract class AbstractTypeHierarchyTraversingFilter implements TypeFilte
 			throws IOException {
 
 		// This method optimizes avoiding unnecessary creation of ClassReaders
+		// matchSelf 默认情况返回 false，有重写 Filter 的这个方法的话就要匹配自身的信息
 		// as well as visiting over those readers.
 		if (matchSelf(metadataReader)) {
 			return true;
 		}
 		ClassMetadata metadata = metadataReader.getClassMetadata();
+//		matchClassName 判断类名是否特殊（根据类名是否相同，用来排除当前类的），默认 false，有拓展重写 Filter 的这个方法的话才会匹配类名
 		if (matchClassName(metadata.getClassName())) {
 			return true;
 		}
-
+//		是否要判断 @Inherited，即判断 要不要看父类是否加了 @Inherited 注解
 		if (this.considerInherited) {
+//			要判断父类，那就先拿到父类
 			String superClassName = metadata.getSuperClassName();
 			if (superClassName != null) {
-				// Optimization to avoid creating ClassReader for super class.
+				// 存在父类 Optimization to avoid creating ClassReader for super class.
 				Boolean superClassMatch = matchSuperClass(superClassName);
 				if (superClassMatch != null) {
 					if (superClassMatch.booleanValue()) {
@@ -80,6 +83,7 @@ public abstract class AbstractTypeHierarchyTraversingFilter implements TypeFilte
 				else {
 					// Need to read super class to determine a match...
 					try {
+//						继续调用 match 父类的
 						if (match(metadata.getSuperClassName(), metadataReaderFactory)) {
 							return true;
 						}
@@ -93,8 +97,9 @@ public abstract class AbstractTypeHierarchyTraversingFilter implements TypeFilte
 				}
 			}
 		}
-
+//		判断 是否要考虑接口
 		if (this.considerInterfaces) {
+//			要考虑接口
 			for (String ifc : metadata.getInterfaceNames()) {
 				// Optimization to avoid creating ClassReader for super class
 				Boolean interfaceMatch = matchInterface(ifc);
