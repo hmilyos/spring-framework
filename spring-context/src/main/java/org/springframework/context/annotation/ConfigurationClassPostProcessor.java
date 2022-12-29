@@ -255,29 +255,33 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// Simply call processConfigurationClasses lazily at this point then.
 			processConfigBeanDefinitions((BeanDefinitionRegistry) beanFactory);
 		}
-
+//		如果是全配置类，则去增强这个全配置类（生成一个代理类），半配置类就不增强
 		enhanceConfigurationClasses(beanFactory);
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
 	}
 
 	/**
+	 * 处理配置类
+	 * 1. 扫描原理
+	 * 2. 解析并标识全配置或半配置类（这里只是标识，对应的处理是在上面的 enhanceConfigurationClasses 方法）
 	 * Build and validate a configuration model based on the registry of
 	 * {@link Configuration} classes.
 	 */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
 		String[] candidateNames = registry.getBeanDefinitionNames();
-//		拿到内置类 和 我们项目提供的 配置类(Spring 里面一切扫描出来的bd皆配置类(1.Spring内置那些bd不算,2.执行内置的BeanDefinitionRegistryPostProcessor之后的bd不算))
+//		拿到内置类(5个) 和 我们项目手动注册的 配置类(Spring 里面一切扫描出来的bd皆配置类(1.Spring内置那些bd不算,2.执行内置的BeanDefinitionRegistryPostProcessor之后的bd不算))
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
-//			判断类是否被解析了
+//			判断类是否被解析了（这里的是否解析是指有没有被标识 全配置or半配置，如果没被标识就走到下面的 checkConfigurationClassCandidate 方法）
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
 //			判断是全配置类 和 半配置类，全配置、半配置并有关官方说法，只是方便我理解和区分，所以这么喊
-//			全配置就是加了 @Configuration 的类，没有加 @Configuration 就是半配置
+//			简单理解：全配置就是加了 @Configuration 的类，没有加 @Configuration 但是有加了 @Component、@ComponentScan、@Import、@ImportResource 的任意一个就是半配置
+//			checkConfigurationClassCandidate 方法会往 BeanDefinition 的属性map里面 put 一个属性，值就是 全配置 or 半配置
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 //				我们配了扫描进来的，基本上会进到这里来，spring 内置的类不会进这里，
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
@@ -325,7 +329,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
-//			解析配置类，这里面就是在遍历我们项目中提供的配置类
+//			解析配置类，这里面就是在遍历我们项目中提供的配置类，里面就是 Spring 扫描的逻辑
 			parser.parse(candidates);
 			parser.validate();
 
@@ -376,6 +380,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	}
 
 	/**
+	 *  如果是全配置类，则去增强这个全配置类（生成一个代理类），半配置类就不增强
 	 * Post-processes a BeanFactory in search of Configuration class BeanDefinitions;
 	 * any candidates are then enhanced by a {@link ConfigurationClassEnhancer}.
 	 * Candidate status is determined by BeanDefinition attribute metadata.
@@ -383,12 +388,16 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 */
 	public void enhanceConfigurationClasses(ConfigurableListableBeanFactory beanFactory) {
 		Map<String, AbstractBeanDefinition> configBeanDefs = new LinkedHashMap<>();
+//		运行到这里时，子类方法已经执行完了，扫描已经完成了，现在是执行父类时走到这里
 		for (String beanName : beanFactory.getBeanDefinitionNames()) {
 			BeanDefinition beanDef = beanFactory.getBeanDefinition(beanName);
+//			configClassAttr 不为空就是已经被标识全配置 or 半配置，空就是没标
 			Object configClassAttr = beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE);
 			AnnotationMetadata annotationMetadata = null;
 			MethodMetadata methodMetadata = null;
+//			判断是不是通过加 @Component 等注解方式扫描进来的
 			if (beanDef instanceof AnnotatedBeanDefinition) {
+//				拿注解信息
 				AnnotatedBeanDefinition annotatedBeanDefinition = (AnnotatedBeanDefinition) beanDef;
 				annotationMetadata = annotatedBeanDefinition.getMetadata();
 				methodMetadata = annotatedBeanDefinition.getFactoryMethodMetadata();
@@ -414,6 +423,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				}
 			}
 			if (ConfigurationClassUtils.CONFIGURATION_CLASS_FULL.equals(configClassAttr)) {
+//				全配置类
 				if (!(beanDef instanceof AbstractBeanDefinition)) {
 					throw new BeanDefinitionStoreException("Cannot enhance @Configuration bean definition '" +
 							beanName + "' since it is not stored in an AbstractBeanDefinition subclass");
@@ -434,11 +444,13 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		ConfigurationClassEnhancer enhancer = new ConfigurationClassEnhancer();
 		for (Map.Entry<String, AbstractBeanDefinition> entry : configBeanDefs.entrySet()) {
+//			遍历全配置类
 			AbstractBeanDefinition beanDef = entry.getValue();
 			// If a @Configuration class gets proxied, always proxy the target class
 			beanDef.setAttribute(AutoProxyUtils.PRESERVE_TARGET_CLASS_ATTRIBUTE, Boolean.TRUE);
 			// Set enhanced subclass of the user-specified bean class
 			Class<?> configClass = beanDef.getBeanClass();
+//			生成 CGLIB 代理对象
 			Class<?> enhancedClass = enhancer.enhance(configClass, this.beanClassLoader);
 			if (configClass != enhancedClass) {
 				if (logger.isTraceEnabled()) {

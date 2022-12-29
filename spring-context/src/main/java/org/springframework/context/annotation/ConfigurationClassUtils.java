@@ -124,10 +124,16 @@ abstract class ConfigurationClassUtils {
 		}
 
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
+//		config is null 就是没有加 @Configuration，不为空就是有 @Configuration
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
+//			加了 @Configuration，且 Configuration 注解的属性里面 proxyBeanMethods 属性是 true(默认是 true)
+//			往 BeanDefinition 加个属性，值为 full，也就是全配置
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
 		else if (config != null || isConfigurationCandidate(metadata)) {
+//			加了 @Configuration 但是 proxyBeanMethods 是 false(很少这么操作)
+//			或加了 @Component、@ComponentScan、@Import、@ImportResource 中的任意一个注解(大多数这这种情况)
+//			往 BeanDefinition 加个属性，值为 lite，也就是半配置
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
 		else {
