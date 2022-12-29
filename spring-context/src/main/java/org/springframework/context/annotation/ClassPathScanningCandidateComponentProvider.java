@@ -432,6 +432,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 				}
 				try {
 //					通过 ASM 技术拿到一个类似数据流的 数据信息
+//					为什么要用 ASM ？可以避免类的提前加载，不破坏类的原始加载顺序
 					MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
 //					判断是否被排除，是否加了必要的注解
 					if (isCandidateComponent(metadataReader)) {
