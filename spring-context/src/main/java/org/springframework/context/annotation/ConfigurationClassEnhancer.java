@@ -74,8 +74,11 @@ class ConfigurationClassEnhancer {
 
 	// The callbacks to use. Note that these callbacks must be stateless.
 	private static final Callback[] CALLBACKS = new Callback[] {
+//			过滤拿到有 @Bean 的方法
 			new BeanMethodInterceptor(),
+//			过滤拿到有 setBeanFactory 方法的
 			new BeanFactoryAwareMethodInterceptor(),
+//			无操作
 			NoOp.INSTANCE
 	};
 
@@ -96,6 +99,7 @@ class ConfigurationClassEnhancer {
 	 */
 	public Class<?> enhance(Class<?> configClass, @Nullable ClassLoader classLoader) {
 		if (EnhancedConfiguration.class.isAssignableFrom(configClass)) {
+//			有实现 EnhancedConfiguration 接口，代表已经生成好代理对象了，不需要再次生成代理对象
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("Ignoring request to enhance %s as it has " +
 						"already been enhanced. This usually indicates that more than one " +
@@ -118,12 +122,19 @@ class ConfigurationClassEnhancer {
 	 * Creates a new CGLIB {@link Enhancer} instance.
 	 */
 	private Enhancer newEnhancer(Class<?> configSuperClass, @Nullable ClassLoader classLoader) {
+//		创建代理增强器
 		Enhancer enhancer = new Enhancer();
+//		设置父类，也就是被代理的类
 		enhancer.setSuperclass(configSuperClass);
+//		用于判断是否被代理了，如果当前类已经实现了 EnhancedConfiguration 接口，那就是已经生成好代理了，不需要再次创建了
 		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
 		enhancer.setUseFactory(false);
 		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
+//		设置命名策略
 		enhancer.setStrategy(new BeanFactoryAwareGeneratorStrategy(classLoader));
+//		setCallback 方法比较简单，直接对所有方法都增强，setCallbackFilter 就复杂点，会进行过滤，只有符合过滤条件的才会增强
+//		spring 当中主要过滤增强了 @Bean 方法和 setBeanFactory 方法
+//		要注意的是 setBeanFactory 方法真正执行触发注入的代码在 ImportAwareBeanPostProcessor 的 postProcessProperties 方法里面
 		enhancer.setCallbackFilter(CALLBACK_FILTER);
 		enhancer.setCallbackTypes(CALLBACK_FILTER.getCallbackTypes());
 		return enhancer;
@@ -189,7 +200,9 @@ class ConfigurationClassEnhancer {
 		public int accept(Method method) {
 			for (int i = 0; i < this.callbacks.length; i++) {
 				Callback callback = this.callbacks[i];
+//				过滤的
 				if (!(callback instanceof ConditionalCallback) || ((ConditionalCallback) callback).isMatch(method)) {
+//					callback 实现了 ConditionalCallback 就进入 isMatch 判断，不是就不需要进入 isMatch 判断
 					return i;
 				}
 			}
@@ -257,6 +270,7 @@ class ConfigurationClassEnhancer {
 		}
 
 		public static boolean isSetBeanFactory(Method candidateMethod) {
+//			且当前方法是 setBeanFactory 方法 且入参只有一个，且入参一定是 BeanFactory 且 当前类是实现了 BeanFactoryAware 接口的
 			return (candidateMethod.getName().equals("setBeanFactory") &&
 					candidateMethod.getParameterCount() == 1 &&
 					BeanFactory.class == candidateMethod.getParameterTypes()[0] &&
@@ -402,6 +416,8 @@ class ConfigurationClassEnhancer {
 
 		@Override
 		public boolean isMatch(Method candidateMethod) {
+//			当前方法不能定义在父类 Object 类中，例如 toString 方法，没必要代理增强
+//			且当前方法不是 setBeanFactory 方法 且加了 @bean 注解
 			return (candidateMethod.getDeclaringClass() != Object.class &&
 					!BeanFactoryAwareMethodInterceptor.isSetBeanFactory(candidateMethod) &&
 					BeanAnnotationHelper.isBeanAnnotated(candidateMethod));

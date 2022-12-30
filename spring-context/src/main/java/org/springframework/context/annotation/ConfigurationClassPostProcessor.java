@@ -257,6 +257,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 //		如果是全配置类，则去增强这个全配置类（生成一个代理类），半配置类就不增强
 		enhanceConfigurationClasses(beanFactory);
+//		这里 add 了一个 BeanPostProcessor，ImportAwareBeanPostProcessor 的 postProcessProperties 方法主要是把我们的一个用了 @Configuration 的全配置类里面 有一个 setBeanFactory 方法，这时候要把 BeanFactory 注入进去
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
 	}
 
@@ -471,11 +472,20 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			this.beanFactory = beanFactory;
 		}
 
+		/**
+		 * 主要是完成 @Configuration 注解的时候 被代理 需要注入一个 beanFactory
+		 * 也就是我们的一个用了 @Configuration 的全配置类里面 有一个 setBeanFactory 方法，这时候要把 BeanFactory 注入进去
+		 * @param pvs the property values that the factory is about to apply (never {@code null})
+		 * @param bean the bean instance created, but whose properties have not yet been set
+		 * @param beanName the name of the bean
+		 * @return
+		 */
 		@Override
 		public PropertyValues postProcessProperties(@Nullable PropertyValues pvs, Object bean, String beanName) {
 			// Inject the BeanFactory before AutowiredAnnotationBeanPostProcessor's
 			// postProcessProperties method attempts to autowire other configuration beans.
 			if (bean instanceof EnhancedConfiguration) {
+//				当前类对象是加了 @Configuration 注解 且用了 CGLIB 代理的， 回调代理类的 setBeanFactory 方法
 				((EnhancedConfiguration) bean).setBeanFactory(this.beanFactory);
 			}
 			return pvs;
