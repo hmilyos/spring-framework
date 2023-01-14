@@ -5,6 +5,7 @@ import com.test.batis.dao.TMapper;
 import com.test.batis.service.TService;
 import com.test.batis.mybatis.MySqlSession;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.session.SqlSession;
 import org.junit.Test;
 import org.mybatis.spring.mapper.MapperFactoryBean;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;

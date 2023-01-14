@@ -18,7 +18,6 @@ public class MyFactoryBean implements FactoryBean {
 
 	@Override
 	public Object getObject() throws Exception {
-		//单例池 存放 90%
 		Object mapper =  MySqlSession.getMapper(mapperInterface);
 		return mapper;
 	}

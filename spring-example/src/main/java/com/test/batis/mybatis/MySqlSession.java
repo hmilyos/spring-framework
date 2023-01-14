@@ -39,8 +39,6 @@ public class MySqlSession {
 			if(method.getDeclaringClass().equals(Object.class)){
 				method.invoke(this,args);
 			}
-
-			//
 			Select select = method.getAnnotation(Select.class);
 			String sql = select.value()[0];
 			log.debug("假装已经连接数据库了 conn db");

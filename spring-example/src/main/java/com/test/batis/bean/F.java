@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Slf4j(topic = "e")
-@Component
+//@Component
 public class F implements IAware{
 	K k;
 

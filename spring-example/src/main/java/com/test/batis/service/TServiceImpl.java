@@ -2,11 +2,14 @@ package com.test.batis.service;
 
 import com.test.batis.dao.AMapper;
 import com.test.batis.dao.TMapper;
+import org.mybatis.spring.mapper.MapperFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -25,9 +28,9 @@ public class TServiceImpl implements TService{
 		this.tMapper = tMapper;
 	}
 
-	public void setaMapper(AMapper aMapper) {
-		this.aMapper = aMapper;
-	}
+//	public void setaMapper(AMapper aMapper) {
+//		this.aMapper = aMapper;
+//	}
 
 	@Override
 	public List<Map<String, Object>> queryFroList() {

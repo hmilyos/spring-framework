@@ -1,13 +1,9 @@
 package com.test.batis.config;
 
-import com.test.batis.dao.TMapper;
-import com.test.batis.util.MyImportBeanDefinitionRegistart;
-import com.test.batis.mybatis.MySqlSession;
 import com.test.batis.util.MyScan;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
-import org.mybatis.spring.mapper.MapperFactoryBean;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
@@ -15,10 +11,10 @@ import javax.sql.DataSource;
 
 @Configuration
 @ComponentScan("com.test.batis")
-@MapperScan("com.test.batis.dao")
+@MapperScan(value = "com.test.batis.dao")
 //@ImportResource("classpath:spring-batis.xml")
 //@Import(MyImportBeanDefinitionRegistart.class)
-//@MyScan
+@MyScan("com.test.batis.dao")
 public class BatisConfig {
 
 	@Bean
@@ -37,6 +33,13 @@ public class BatisConfig {
 		SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
 		factoryBean.setDataSource(dataSource());
 		return factoryBean.getObject();
+	}
+
+	@Configuration
+	@Import(Bean1.class)
+	public static class AutoConfig{
+
+
 	}
 
 

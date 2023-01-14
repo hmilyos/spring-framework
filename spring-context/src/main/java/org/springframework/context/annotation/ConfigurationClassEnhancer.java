@@ -110,6 +110,7 @@ class ConfigurationClassEnhancer {
 			}
 			return configClass;
 		}
+//		没有生成，去生成代理
 		Class<?> enhancedClass = createClass(newEnhancer(configClass, classLoader));
 		if (logger.isTraceEnabled()) {
 			logger.trace(String.format("Successfully enhanced %s; enhanced class name is: %s",
@@ -130,7 +131,7 @@ class ConfigurationClassEnhancer {
 		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
 		enhancer.setUseFactory(false);
 		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
-//		设置命名策略
+//		这行代码会在我们动态生成的代理对象当中添加一个属性 $$beanFactory
 		enhancer.setStrategy(new BeanFactoryAwareGeneratorStrategy(classLoader));
 //		setCallback 方法比较简单，直接对所有方法都增强，setCallbackFilter 就复杂点，会进行过滤，只有符合过滤条件的才会增强
 //		spring 当中主要过滤增强了 @Bean 方法和 setBeanFactory 方法
@@ -200,9 +201,9 @@ class ConfigurationClassEnhancer {
 		public int accept(Method method) {
 			for (int i = 0; i < this.callbacks.length; i++) {
 				Callback callback = this.callbacks[i];
-//				过滤的
+//				过滤的，从数组 callbacks 里面挑出 Spring 想要的那个 callback 对应的数组下标
 				if (!(callback instanceof ConditionalCallback) || ((ConditionalCallback) callback).isMatch(method)) {
-//					callback 实现了 ConditionalCallback 就进入 isMatch 判断，不是就不需要进入 isMatch 判断
+//					callback 实现了 ConditionalCallback 就进入 isMatch 判断（setBeanFactory 方法或 加了 @bean 的方法），不是就不需要进入 isMatch 判断，那就不是 Spring 需要的那个 Callback
 					return i;
 				}
 			}

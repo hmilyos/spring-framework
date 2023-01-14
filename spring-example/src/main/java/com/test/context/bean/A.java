@@ -15,7 +15,7 @@ import javax.inject.Named;
 public class A implements InitializingBean {
 
 
-	@Autowired
+	@Autowired(required = true)
 	C c;
 
 	@Autowired
