@@ -41,6 +41,9 @@ import org.springframework.lang.Nullable;
  */
 public class MutablePropertySources implements PropertySources {
 
+//	关键是存了 systemProperties：JVM参数、systemEnvironment：系统环境变量，以及项目配置文件
+//	list 是有序的，优先级高的排在前面，要找某个参数时找到就直接返回了，所以相同的属性，优先级高的会先被找到，
+// 因为 StandardEnvironment 的 customizePropertySources 方法里面是先 add 了 systemProperties 再 add systemEnvironment， 所以 systemProperties > systemEnvironment
 	private final List<PropertySource<?>> propertySourceList = new CopyOnWriteArrayList<>();
 
 

@@ -132,8 +132,9 @@ abstract class ConfigurationClassUtils {
 		}
 		else if (config != null || isConfigurationCandidate(metadata)) {
 //			加了 @Configuration 但是 proxyBeanMethods 是 false(很少这么操作)
-//			或加了 @Component、@ComponentScan、@Import、@ImportResource 中的任意一个注解(大多数这这种情况)
+//			或加了 @Component、@ComponentScan、@Import、@ImportResource、@Bean 中的任意一个注解(大多数这这种情况)
 //			往 BeanDefinition 加个属性，值为 lite，也就是半配置
+//			不同点：@Bean 的返回的那个对象所对应的类是不支持作为配置类的
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
 		else {
@@ -150,6 +151,7 @@ abstract class ConfigurationClassUtils {
 	}
 
 	/**
+	 * 判断是否是配置类
 	 * Check the given metadata for a configuration class candidate
 	 * (or nested component class declared within a configuration/component class).
 	 * @param metadata the metadata of the annotated class
@@ -163,13 +165,14 @@ abstract class ConfigurationClassUtils {
 		}
 
 		// Any of the typical annotations found?
+//		加了 @Component、@ComponentScan、@Import、@ImportResource 中的任意一个注解
 		for (String indicator : candidateIndicators) {
 			if (metadata.isAnnotated(indicator)) {
 				return true;
 			}
 		}
 
-		// Finally, let's look for @Bean methods...
+		// Finally, let's look for @Bean methods... 看一下有没有 @Bean 方法
 		return hasBeanMethods(metadata);
 	}
 

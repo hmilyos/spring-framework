@@ -38,6 +38,7 @@ import org.springframework.util.ClassUtils;
  * Represents a user-defined {@link Configuration @Configuration} class.
  * Includes a set of {@link Bean} methods, including all such methods
  * defined in the ancestry of the class, in a 'flattened-out' manner.
+ * 用来描述类的注解信息，包括类上的注解，方法上的注解，方法参数上的注解
  *
  * @author Chris Beams
  * @author Juergen Hoeller
@@ -55,13 +56,17 @@ final class ConfigurationClass {
 	@Nullable
 	private String beanName;
 
+//	这个配置类是被哪个配置类 import 进来的(一般情况下，一个配置类只会被一个配置类 import 进来，但是也有可能被多个配置类 import 进来)
 	private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 
+//	当前配置类当中所有的 @Bean 方法
 	private final Set<BeanMethod> beanMethods = new LinkedHashSet<>();
 
+//	xml 配置文件中的 <import> 标签
 	private final Map<String, Class<? extends BeanDefinitionReader>> importedResources =
 			new LinkedHashMap<>();
 
+//	当前配置类上面所有的 @Import 的类 的类型为 ImportBeanDefinitionRegistrar 的对象
 	private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
 			new LinkedHashMap<>();
 

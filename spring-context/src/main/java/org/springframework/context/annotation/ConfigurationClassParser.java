@@ -135,6 +135,7 @@ class ConfigurationClassParser {
 
 	private final ConditionEvaluator conditionEvaluator;
 
+//	保存了所有已解析的配置类
 	private final Map<ConfigurationClass, ConfigurationClass> configurationClasses = new LinkedHashMap<>();
 
 	private final Map<String, ConfigurationClass> knownSuperclasses = new HashMap<>();
@@ -228,7 +229,7 @@ class ConfigurationClassParser {
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
 		}
-//		configurationClasses 缓存了解析好的类，所以这里先从缓存获取
+//		configurationClasses 缓存了解析好的配置类，所以这里先从缓存获取
 		ConfigurationClass existingClass = this.configurationClasses.get(configClass);
 		if (existingClass != null) {
 //			在缓存中
@@ -247,10 +248,11 @@ class ConfigurationClassParser {
 			}
 		}
 
-		// Recursively process the configuration class and its superclass hierarchy.
+		// Recursively process the configuration class and its superclass hierarchy. 递归的处理配置类和它的父类
+//		SourceClass 是当前类的基础信息(父类、内部类、有哪些方法...)，ConfigurationClass 是当前类的配置信息，
 		SourceClass sourceClass = asSourceClass(configClass, filter);
 		do {
-//			真正的开始解析配置类
+//			真正的开始解析配置类：利用 SourceClass 的信息，去填充 ConfigurationClass 的信息
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass, filter);
 		}
 		while (sourceClass != null);
@@ -259,7 +261,7 @@ class ConfigurationClassParser {
 	}
 
 	/**
-	 *  真正的开始解析配置类
+	 *  真正的开始解析配置类，利用 SourceClass 的信息，去填充 ConfigurationClass 的信息
 	 * Apply processing and build a complete {@link ConfigurationClass} by reading the
 	 * annotations, members and methods from the source class. This method can be called
 	 * multiple times as relevant sources are discovered.
@@ -274,7 +276,7 @@ class ConfigurationClassParser {
 
 		if (configClass.getMetadata().isAnnotated(Component.class.getName())) {
 			// Recursively process any member (nested) classes first
-//			处理内部类（类里面又有加了 @Component 的类）
+//			处理内部类（当前类里面又有加了 @Component 的内部类）
 			processMemberClasses(configClass, sourceClass, filter);
 		}
 
@@ -358,13 +360,15 @@ class ConfigurationClassParser {
 	 */
 	private void processMemberClasses(ConfigurationClass configClass, SourceClass sourceClass,
 			Predicate<String> filter) throws IOException {
-
+//		拿到所有的内部类
 		Collection<SourceClass> memberClasses = sourceClass.getMemberClasses();
 		if (!memberClasses.isEmpty()) {
 			List<SourceClass> candidates = new ArrayList<>(memberClasses.size());
 			for (SourceClass memberClass : memberClasses) {
+//				判断内部类是否是配置类
 				if (ConfigurationClassUtils.isConfigurationCandidate(memberClass.getMetadata()) &&
 						!memberClass.getMetadata().getClassName().equals(configClass.getMetadata().getClassName())) {
+//					将内部类加入到 candidates 中
 					candidates.add(memberClass);
 				}
 			}
@@ -376,6 +380,7 @@ class ConfigurationClassParser {
 				else {
 					this.importStack.push(configClass);
 					try {
+//						递归调用 processConfigurationClass 方法，处理内部类
 						processConfigurationClass(candidate.asConfigClass(configClass), filter);
 					}
 					finally {
