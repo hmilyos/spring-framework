@@ -137,15 +137,16 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
-		if (configClass.isImported()) {
-			registerBeanDefinitionForImportedConfigurationClass(configClass);
+		if (configClass.isImported()) { // 如果是被@Impor导入的配置类
+			registerBeanDefinitionForImportedConfigurationClass(configClass); // 注册通过@Import导入的配置类
 		}
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
+			// 注册配置类中的@Bean方法
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
 
-		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
-		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
+		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources()); // xml 方式注入进来的 bean
+		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars()); // 处理实现了 ImportBeanDefinitionRegistrar 注册器接口 方式注入进来的 bean
 	}
 
 	/**
