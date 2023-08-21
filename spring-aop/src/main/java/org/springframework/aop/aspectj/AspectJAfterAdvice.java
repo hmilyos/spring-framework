@@ -43,6 +43,7 @@ public class AspectJAfterAdvice extends AbstractAspectJAdvice
 
 	@Override
 	public Object invoke(MethodInvocation mi) throws Throwable {
+//		@After： 先调用目标方法，然后在 finally 块中调用 advice.after() 方法，最后返回目标方法的返回值
 		try {
 			return mi.proceed();
 		}

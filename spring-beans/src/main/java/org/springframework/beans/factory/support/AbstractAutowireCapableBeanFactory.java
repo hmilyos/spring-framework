@@ -427,6 +427,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		Object result = existingBean;
 		for (BeanPostProcessor processor : getBeanPostProcessors()) {
+//			遍历所有的 BeanPostProcessor，调用 postProcessAfterInitialization 方法，
+//			当 processor 为 AnnotationAwareAspectJAutoProxyCreator，执行下面完成 Aop 代理，用原生 bean(result) 包装成代理对象(current)
 			Object current = processor.postProcessAfterInitialization(result, beanName);
 			if (current == null) {
 				return result;
@@ -600,7 +602,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		try {
 //			填充属性
 			populateBean(beanName, mbd, instanceWrapper);
-//			执行各种 Aware 的回调、初始化回调、执行直接实现了 BPP 的对象的 after 方法
+//			执行各种 Aware 的回调、初始化回调、执行直接实现了 BPP 的对象的 after 方法, 特别是完成了 AOP 的创建
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		}
 		catch (Throwable ex) {

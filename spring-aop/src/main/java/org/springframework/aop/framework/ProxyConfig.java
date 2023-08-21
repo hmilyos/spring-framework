@@ -65,6 +65,7 @@ public class ProxyConfig implements Serializable {
 	 * Return whether to proxy the target class directly as well as any interfaces.
 	 */
 	public boolean isProxyTargetClass() {
+//		有设置 @EnableAspectJAutoProxy(proxyTargetClass = true) ,那么这里就是true
 		return this.proxyTargetClass;
 	}
 

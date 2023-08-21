@@ -349,7 +349,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
 			Object proxy = createProxy(
-					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
+					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean)); // 创建代理对象
 			this.proxyTypes.put(cacheKey, proxy.getClass());
 			return proxy;
 		}
@@ -447,7 +447,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
 		}
 
-		ProxyFactory proxyFactory = new ProxyFactory();
+		ProxyFactory proxyFactory = new ProxyFactory(); // 创建代理工厂
 		proxyFactory.copyFrom(this);
 
 		if (proxyFactory.isProxyTargetClass()) {
@@ -455,7 +455,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			if (Proxy.isProxyClass(beanClass)) {
 				// Must allow for introductions; can't just set interfaces to the proxy's interfaces only.
 				for (Class<?> ifc : beanClass.getInterfaces()) {
-					proxyFactory.addInterface(ifc);
+					proxyFactory.addInterface(ifc); // 添加接口
 				}
 			}
 		}
@@ -469,10 +469,10 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			}
 		}
 
-		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
-		proxyFactory.addAdvisors(advisors);
-		proxyFactory.setTargetSource(targetSource);
-		customizeProxyFactory(proxyFactory);
+		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors); // 构建通知器, 简单理解就是构建切面，切面逻辑在这里
+		proxyFactory.addAdvisors(advisors); // 添加通知器, 简单理解就是添加切面
+		proxyFactory.setTargetSource(targetSource); // 设置目标源, 简单理解就是设置代理对象
+		customizeProxyFactory(proxyFactory); // 定制代理工厂, 简单理解就是定制代理对象, 比如添加拦截器
 
 		proxyFactory.setFrozen(this.freezeProxy);
 		if (advisorsPreFiltered()) {
