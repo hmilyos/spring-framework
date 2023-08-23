@@ -152,7 +152,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-		LifecycleMetadata metadata = findLifecycleMetadata(bean.getClass());
+		LifecycleMetadata metadata = findLifecycleMetadata(bean.getClass()); // 找到bean的生命周期元数据
 		try {
 			metadata.invokeInitMethods(bean, beanName);
 		}
@@ -197,16 +197,18 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 
 	private LifecycleMetadata findLifecycleMetadata(Class<?> clazz) {
+//		如果没有缓存，则构建生命周期元数据
 		if (this.lifecycleMetadataCache == null) {
 			// Happens after deserialization, during destruction...
-			return buildLifecycleMetadata(clazz);
+			return buildLifecycleMetadata(clazz); // 构建生命周期元数据
 		}
-		// Quick check on the concurrent map first, with minimal locking.
+		// Quick check on the concurrent map first, with minimal locking. // 先从缓存中获取
 		LifecycleMetadata metadata = this.lifecycleMetadataCache.get(clazz);
 		if (metadata == null) {
 			synchronized (this.lifecycleMetadataCache) {
 				metadata = this.lifecycleMetadataCache.get(clazz);
 				if (metadata == null) {
+//					缓存中没有，则构建生命周期元数据
 					metadata = buildLifecycleMetadata(clazz);
 					this.lifecycleMetadataCache.put(clazz, metadata);
 				}
@@ -230,6 +232,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 			final List<LifecycleElement> currDestroyMethods = new ArrayList<>();
 
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
+//				遍历类上的所有方法，找到标注了指定注解的方法，例如@PostConstruct、@PreDestroy、等等，然后封装成LifecycleElement对象，添加到initMethods、destroyMethods集合中
 				if (this.initAnnotationType != null && method.isAnnotationPresent(this.initAnnotationType)) {
 					LifecycleElement element = new LifecycleElement(method);
 					currInitMethods.add(element);
