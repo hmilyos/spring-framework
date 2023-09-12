@@ -39,6 +39,8 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
+ * 实现了 BeanDefinition 接口中定义的各种 api，并定义了一系列的常量属性，这些常量会直接影响到 Spring 实例化 Bean 时的策略
+ * 并提供了 bd 的深度 copy 的构造方法
  * Base class for concrete, full-fledged {@link BeanDefinition} classes,
  * factoring out common properties of {@link GenericBeanDefinition},
  * {@link RootBeanDefinition}, and {@link ChildBeanDefinition}.
@@ -66,30 +68,35 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	public static final String SCOPE_DEFAULT = "";
 
 	/**
+	 * 手动装配
 	 * Constant that indicates no external autowiring at all.
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_NO = AutowireCapableBeanFactory.AUTOWIRE_NO;
 
 	/**
+	 * 按名称自动装配bean属性
 	 * Constant that indicates autowiring bean properties by name.
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_BY_NAME = AutowireCapableBeanFactory.AUTOWIRE_BY_NAME;
 
 	/**
+	 * 按类型自动装配bean属性
 	 * Constant that indicates autowiring bean properties by type.
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_BY_TYPE = AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE;
 
 	/**
+	 * 按构造方法自动装配bean属性
 	 * Constant that indicates autowiring a constructor.
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_CONSTRUCTOR = AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR;
 
 	/**
+	 * 首先尝试使用构造方法自动装配，如果失败则使用按类型自动装配， 已废弃
 	 * Constant that indicates determining an appropriate autowire strategy
 	 * through introspection of the bean class.
 	 * @see #setAutowireMode
@@ -100,18 +107,23 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	public static final int AUTOWIRE_AUTODETECT = AutowireCapableBeanFactory.AUTOWIRE_AUTODETECT;
 
 	/**
+	 * 是否对 bean 的依赖项进行检查
+	 * DEPENDENCY_CHECK_NONE = 0; 不检查
 	 * Constant that indicates no dependency check at all.
 	 * @see #setDependencyCheck
 	 */
 	public static final int DEPENDENCY_CHECK_NONE = 0;
 
 	/**
+	 * 是否对 bean 的对象引用进行检查
+	 * DEPENDENCY_CHECK_OBJECTS = 1; 对象引用检查，不会检查基础数据类型和String
 	 * Constant that indicates dependency checking for object references.
 	 * @see #setDependencyCheck
 	 */
 	public static final int DEPENDENCY_CHECK_OBJECTS = 1;
 
 	/**
+	 * 对基础数据类型和String检查
 	 * Constant that indicates dependency checking for "simple" properties.
 	 * @see #setDependencyCheck
 	 * @see org.springframework.beans.BeanUtils#isSimpleProperty
@@ -119,6 +131,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	public static final int DEPENDENCY_CHECK_SIMPLE = 2;
 
 	/**
+	 * 对所有属性进行检查
 	 * Constant that indicates dependency checking for all properties
 	 * (object references as well as "simple" properties).
 	 * @see #setDependencyCheck
@@ -138,21 +151,23 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	public static final String INFER_METHOD = "(inferred)";
 
 
+//	存放 bean 的 class 对象
 	@Nullable
 	private volatile Object beanClass;
 
 	@Nullable
 	private String scope = SCOPE_DEFAULT;
 
+//	这个类是不是抽象类
 	private boolean abstractFlag = false;
-
+//	是否懒加载
 	@Nullable
 	private Boolean lazyInit;
-
+//	自动注入模型
 	private int autowireMode = AUTOWIRE_NO;
-
+//  默认依赖检查项，默认不检查
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;
-
+//  存放实例化当前类之前还需要实例化的类的字符串，对应的就是 @DependsOn 注解
 	@Nullable
 	private String[] dependsOn;
 
@@ -174,32 +189,33 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	@Nullable
 	private String factoryMethodName;
-
+//	构造方法的参数相关信息
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;
 
 	@Nullable
 	private MutablePropertyValues propertyValues;
-
+//  记录 lookup-method、replaced-method 元素
 	private MethodOverrides methodOverrides = new MethodOverrides();
-
+//	初始化方法名，需要手动指定，即调用 bd 的 setInitMethodName 方法，对比来看：RootBeanDefinition 中 externallyManagedConfigMembers 记录的是使用了 @Constructor、@Field、@Method 注解的方法
 	@Nullable
 	private String initMethodName;
 
 	@Nullable
 	private String destroyMethodName;
-
+//	是否强制执行初始化方法，不重要，想看就看看哪里调用了这个
+//	false表示不是不执行，只是不强制执行，例如 initMethodName 指定了一个不存在的方法，还是会执行
 	private boolean enforceInitMethod = true;
-
+//	是否强制执行销毁方法，不重要，想看就看看哪里调用了这个
 	private boolean enforceDestroyMethod = true;
-
+//	是否是合成方法，即不是用户定义的
 	private boolean synthetic = false;
 
 	private int role = BeanDefinition.ROLE_APPLICATION;
-
+//	备注描述，不重要
 	@Nullable
 	private String description;
-
+//	可以理解成是 bean 的来源，例如是 xml 配置文件，还是注解，还是 java 配置类
 	@Nullable
 	private Resource resource;
 

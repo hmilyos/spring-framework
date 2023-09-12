@@ -22,6 +22,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 
 /**
+ * ChildBeanDefinition 不能单独使用，必须和父类一起使用
+ *  Spring 2.5 后，ChildBeanDefinition 被废弃，推荐使用 GenericBeanDefinition，它可以通过 setParentName() 方法来设置父类
  * Bean definition for beans which inherit settings from their parent.
  * Child bean definitions have a fixed dependency on a parent bean definition.
  *

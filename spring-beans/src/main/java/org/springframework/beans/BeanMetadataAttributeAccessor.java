@@ -20,6 +20,8 @@ import org.springframework.core.AttributeAccessorSupport;
 import org.springframework.lang.Nullable;
 
 /**
+ *  继承了 AttributeAccessorSupport 并实现了 BeanMetadataElement 接口
+ *  主要是重写了 AttributeAccessorSupport 当中的 setSource 方法
  * Extension of {@link org.springframework.core.AttributeAccessorSupport},
  * holding attributes as {@link BeanMetadataAttribute} objects in order
  * to keep track of the definition source.

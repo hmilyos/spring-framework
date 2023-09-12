@@ -600,7 +600,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Initialize the bean instance.
 		Object exposedObject = bean;
 		try {
-//			填充属性
+//			填充属性/完成属性注入
 			populateBean(beanName, mbd, instanceWrapper);
 //			执行各种 Aware 的回调、初始化回调、执行直接实现了 BPP 的对象的 after 方法, 特别是完成了 AOP 的创建
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
@@ -1389,6 +1389,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	}
 
 	/**
+	 * 填充属性/完成属性注入
 	 * Populate the bean instance in the given BeanWrapper with the property values
 	 * from the bean definition.
 	 * @param beanName the name of the bean
