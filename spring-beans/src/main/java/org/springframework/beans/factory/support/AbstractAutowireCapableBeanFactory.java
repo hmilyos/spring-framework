@@ -1478,8 +1478,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		if (pvs != null) {
-//			找到所有 set 方法，然后完成自动注入
+//			找到所有 set 方法，然后完成自动注入, 有点像 Java 自省
 			applyPropertyValues(beanName, mbd, bw, pvs);
+//			在一个 setter 方法上面加 @Autowired 注解，这个方法入参所对应的 Bean，要分两种情况
+//			1. 如果注入模型是 AUTOWIRE_BY_NAME 或 AUTOWIRE_BY_TYPE，那么 Spring 底层采用的是 Java 的自省机制发现 setter 方法然后调用执行，也就是说 @Autowired 注解是无用的
+//			2. 如果注入模型是默认的 AUTOWIRE_NO = 0，那么就跟在属性上面加  @Autowired 注解 差不多，底层查找所有加了  @Autowired 注解的方法，然后反射调用
+
+//			在一个 setter 方法上面不加 @Autowired 之类的注解，也分两种情况
+//			1. 如果注入模型是 AUTOWIRE_BY_NAME 或 AUTOWIRE_BY_TYPE，那么 Spring 底层采用的是 Java 的自省机制发现 setter 方法然后调用执行，注入成功
+//			2. 如果注入模型是默认的 AUTOWIRE_NO = 0，那么该方法会被 Spring 忽略，不会注入
 		}
 	}
 
@@ -1535,6 +1542,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
+//		propertyNames 是所有需要完成主动注入的属性名字
 		String[] propertyNames = unsatisfiedNonSimpleProperties(mbd, bw);
 		for (String propertyName : propertyNames) {
 			try {
@@ -1581,6 +1589,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		PropertyValues pvs = mbd.getPropertyValues();
 		PropertyDescriptor[] pds = bw.getPropertyDescriptors();
 		for (PropertyDescriptor pd : pds) {
+//			判断属性描述符时候有 setter 且 没在 bd 中定义了该属性，如果没有定义，说明该属性是需要自动注入的
 			if (pd.getWriteMethod() != null && !isExcludedFromDependencyCheck(pd) && !pvs.contains(pd.getName()) &&
 					!BeanUtils.isSimpleProperty(pd.getPropertyType())) {
 				result.add(pd.getName());

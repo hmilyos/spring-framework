@@ -127,7 +127,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 	 * Package-visible field that indicates a before-instantiation post-processor having kicked in. */
 	@Nullable
 	volatile Boolean beforeInstantiationResolved;
-//	实际缓存的类型是 Constructor、Field、Method，这三个类都是 Member 的子类，即记录使用了 @Constructor、@Field、@Method 注解的方法
+//	实际缓存的类型是 Constructor、Field、Method，这三个类都是 Member 的子类，即记录使用了 @PostConstructor、@Field、@Method 注解的方法
 	@Nullable
 	private Set<Member> externallyManagedConfigMembers;
 //	InitializingBean 接口中的 init 回调函数名 afterPropertiesSet 方法会在这里记录，以便进行生命周期回调
