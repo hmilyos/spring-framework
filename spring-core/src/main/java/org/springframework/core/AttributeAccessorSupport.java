@@ -43,6 +43,7 @@ public abstract class AttributeAccessorSupport implements AttributeAccessor, Ser
 
 	@Override
 	public void setAttribute(String name, @Nullable Object value) {
+//		往map当中put了⼀个k/v 如果传⼀个为null的value等同于remove的操作
 		Assert.notNull(name, "Name must not be null");
 		if (value != null) {
 			this.attributes.put(name, value);
