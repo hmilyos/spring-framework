@@ -634,7 +634,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		}
 	}
 
-	/**
+	/** aop:after-throwing advice 判断是否需要回滚事务
 	 * Handle a throwable, completing the transaction.
 	 * We may commit or roll back, depending on the configuration.
 	 * @param txInfo information about the current transaction
@@ -646,6 +646,8 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 				logger.trace("Completing transaction for [" + txInfo.getJoinpointIdentification() +
 						"] after exception: " + ex);
 			}
+//			判断是否需要回滚事务，transactionAttribute 默认的实现类是 RuleBasedTransactionAttribute,
+//			如果没有指定 rollbackOn 属性，那么默认是调用其父类 DefaultTransactionAttribute(RuntimeException 和 Error时回滚事务)
 			if (txInfo.transactionAttribute != null && txInfo.transactionAttribute.rollbackOn(ex)) {
 				try {
 					txInfo.getTransactionManager().rollback(txInfo.getTransactionStatus());
