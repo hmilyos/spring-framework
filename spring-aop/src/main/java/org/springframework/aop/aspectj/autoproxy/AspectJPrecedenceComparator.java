@@ -80,7 +80,9 @@ class AspectJPrecedenceComparator implements Comparator<Advisor> {
 
 	@Override
 	public int compare(Advisor o1, Advisor o2) {
+//		比较两个advisor的优先级，即判断 @Order 注解的值
 		int advisorPrecedence = this.advisorComparator.compare(o1, o2);
+//		如果两个advisor的优先级相同，且在同一个aspect中，则比较两个advisor在xml里面的声明顺序
 		if (advisorPrecedence == SAME_PRECEDENCE && declaredInSameAspect(o1, o2)) {
 			advisorPrecedence = comparePrecedenceWithinAspect(o1, o2);
 		}

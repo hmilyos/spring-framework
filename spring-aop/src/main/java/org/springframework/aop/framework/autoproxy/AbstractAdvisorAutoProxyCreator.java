@@ -93,16 +93,20 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 * @see #extendAdvisors
 	 */
 	protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
+//		找到所有的候选 Advisor，注解版的在里面是有对通知方法进行排序的，如果是 xml 版的，这里面会按 xml 里面声明配置的顺序来排序，也可以理解成是没有排序的，按照xml里面声明的顺序来添加到集合中
 		List<Advisor> candidateAdvisors = findCandidateAdvisors();
+//		找到所有可以应用到当前 bean 的 Advisor
 		List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
 		extendAdvisors(eligibleAdvisors);
 		if (!eligibleAdvisors.isEmpty()) {
+//			对切面通知方法进行排序，但是注解版的已经在 findCandidateAdvisors 中排序过了，这里主要是针对加了 @Order 注解的通知方法和 xml 配置的通知方法进行排序
 			eligibleAdvisors = sortAdvisors(eligibleAdvisors);
 		}
 		return eligibleAdvisors;
 	}
 
 	/**
+	 * xml 配置 aop 是通过这个方法获取所有的 Advisor
 	 * Find all candidate Advisors to use in auto-proxying.
 	 * @return the List of candidate Advisors
 	 */
